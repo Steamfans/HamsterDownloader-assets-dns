@@ -1,0 +1,36 @@
+# Sync assets.123123999.xyz grey A records from cf-speed-dns ipTop.
+# Public repo → unlimited GitHub Actions minutes for frequent schedule.
+# Secrets: CLOUDFLARE_API_TOKEN (required), PUSHPLUS_TOKEN (optional)
+name: Sync assets DNS
+
+on:
+  schedule:
+    # Every 30 minutes (UTC). ipTop ~5min; 15min: */15 * * * *
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: assets-dns-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CF_ZONE_ID: "7aa2f0a29ec948d83ef363d0664fd598"
+  CF_DNS_NAME: "assets.123123999.xyz"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync grey A records from ipTop
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ env.CF_ZONE_ID }}
+          CF_DNS_NAME: ${{ env.CF_DNS_NAME }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+        run: python3 dnscf-assets.py
