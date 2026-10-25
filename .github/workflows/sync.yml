@@ -1,13 +1,16 @@
 # Sync assets.123123999.xyz grey A records from cf-speed-dns ipTop.
-# Public repo → unlimited GitHub Actions minutes for frequent schedule.
+# Public repo → unlimited GitHub Actions minutes.
+# Schedule: cron-job.org POST → workflow_dispatch (every 30min at :10/:40 Asia/Shanghai).
 # Secrets: CLOUDFLARE_API_TOKEN (required), PUSHPLUS_TOKEN (optional)
 name: Sync assets DNS
 
 on:
-  schedule:
-    # Every 30 minutes (UTC) at :10 and :40 — avoids :00/:30 peak load; starts from :40
-    - cron: "10,40 * * * *"
   workflow_dispatch:
+    inputs:
+      source:
+        description: Trigger source (manual / cron-job.org)
+        required: false
+        default: manual
 
 concurrency:
   group: assets-dns-sync
@@ -26,6 +29,9 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+
+      - name: Trigger info
+        run: echo "trigger_source=${{ github.event.inputs.source || 'unknown' }}"
 
       - name: Sync grey A records from ipTop
         env:
