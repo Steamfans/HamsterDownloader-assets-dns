@@ -105,6 +105,15 @@ def upsert_a_record(record_id: str | None, name: str, ip: str) -> str:
     raise RuntimeError(f"upsert failed: {result}")
 
 
+def delete_a_record(record_id: str, name: str, ip: str) -> str:
+    url = f"https://api.cloudflare.com/client/v4/zones/{CF_ZONE_ID}/dns_records/{record_id}"
+    result = http_json("DELETE", url)
+    if result.get("success"):
+        print(f"del {name} {ip} (stale)")
+        return f"{ip} del"
+    raise RuntimeError(f"delete failed: {result}")
+
+
 def sync_a_records(name: str, target_ips: list[str]) -> list[str]:
     """Match by IP content to avoid swap conflicts (CF 81058)."""
     records = list_a_records(name)
@@ -125,6 +134,10 @@ def sync_a_records(name: str, target_ips: list[str]) -> list[str]:
 
         lines.append(upsert_a_record(None, name, ip))
         records.append({"id": "new", "content": ip, "proxied": False})
+
+    for r in list_a_records(name):
+        if r["content"] not in target_set and r.get("id"):
+            lines.append(delete_a_record(r["id"], name, r["content"]))
 
     return lines
 
